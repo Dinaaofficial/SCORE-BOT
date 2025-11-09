@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Score System</title>
+    <style>
+        /* --- All CSS is here --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .view {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #setup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #setup-form input, #setup-form button {
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        #setup-form button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        #setup-form button:hover {
+            background-color: #2980b9;
+        }
+        #team-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .card {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        #simulate-btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        #simulate-btn:hover {
+            background-color: #229954;
+        }
+        .reset-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .reset-button:hover {
+            background-color: #c0392b;
+        }
+        .scorecard-team {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        .scorecard-team h4 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .scorecard-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            text-align: center;
+        }
+        .scorecard-detail-item span {
+            display: block;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        #points-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #points-table th, #points-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        #points-table th {
+            background-color: #ecf0f1;
+        }
+        #results-container p {
+            background-color: #e8f5e9;
+            border-left: 5px solid #4caf50;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #message {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏏 Cricket Score System</h1>
+            <button id="reset-btn" class="reset-button">Reset System</button>
+        </header>
+
+        <div id="setup-view" class="view">
+            <h2>Setup New Tournament</h2>
+            <form id="setup-form">
+                <input type="text" id="tournament-name" placeholder="Tournament Name" required>
+                <input type="number" id="tournament-overs" placeholder="Overs per Match" min="1" required>
+                <input type="number" id="team-count" placeholder="Number of Teams" min="2" required>
+                <div id="team-inputs"></div>
+                <button type="submit">Create Tournament</button>
+            </form>
+        </div>
+
+        <div id="dashboard-view" class="view" style="display: none;">
+            <h2 id="tournament-title">Tournament Dashboard</h2>
+            
+            <div class="card">
+                <h3>Next Match</h3>
+                <p id="next-match-info">Loading...</p>
+                <button id="simulate-btn">Simulate with Bot</button>
+            </div>
+
+            <div id="last-match-scorecard" class="card" style="display: none;">
+                <h3>Last Match Scorecard</h3>
+                <div id="scorecard-details">
+                    <!-- Scorecard will be injected here by JS -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Points Table</h3>
+                <div id="points-table-container">
+                    <table id="points-table">
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>P</th>
+                                <th>W</th>
+                                <th>L</th>
+                                <th>NRR</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table rows will be inserted here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Match Results</h3>
+                <div id="results-container">
+                     <!-- Results will be inserted here by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="loader" class="loader" style="display: none;"></div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+    // --- All JavaScript is here ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const API_BASE = '';
+
+        const setupView = document.getElementById('setup-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const setupForm = document.getElementById('setup-form');
+        const teamCountInput = document.getElementById('team-count');
+        const teamInputsContainer = document.getElementById('team-inputs');
+        const simulateBtn = document.getElementById('simulate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const loader = document.getElementById('loader');
+        const messageDiv = document.getElementById('message');
+        const lastMatchScorecardDiv = document.getElementById('last-match-scorecard');
+        const scorecardDetailsDiv = document.getElementById('scorecard-details');
+
+        teamCountInput.addEventListener('input', (e) => {
+            const count = parseInt(e.target.value) || 0;
+            teamInputsContainer.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = `Name for Team ${i}`;
+                input.required = true;
+                teamInputsContainer.appendChild(input);
+            }
+        });
+
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}/api${endpoint}`, options);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Something went wrong');
+                }
+                return await response.json();
+            } catch (error) {
+                showMessage(error.message, 'error');
+                throw error;
+            }
+        }
+        
+        function showMessage(msg, type = 'info') {
+            messageDiv.textContent = msg;
+            messageDiv.style.color = type === 'error' ? '#e74c3c' : '#27ae60';
+            setTimeout(() => { messageDiv.textContent = ''; }, 5000);
+        }
+
+        function showLoader(show) {
+            loader.style.display = show ? 'block' : 'none';
+        }
+
+        function showView(view) {
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            view.style.display = 'flex';
+        }
+
+        function renderScorecard(match) {
+            scorecardDetailsDiv.innerHTML = '';
+            
+            const team1Card = document.createElement('div');
+            team1Card.className = 'scorecard-team';
+            team1Card.innerHTML = `
+                <h4>${match.team1}</h4>
+                <div class="scorecard-details-grid">
+                    <div class="scorecard-detail-item"><span>${match.scorecard1.runs}/${match.scorecard1.wickets}</span>Runs/Wickets</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard1.extras.wides + match.scorecard1.extras.noballs + match.scorecard1.extras.byes + match.scorecard1.extras.legbyes}</span>Extras</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard1.breakdown['4']}</span>Fours</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard1.breakdown['6']}</span>Sixes</div>
+                </div>
+            `;
+            scorecardDetailsDiv.appendChild(team1Card);
+
+            const team2Card = document.createElement('div');
+            team2Card.className = 'scorecard-team';
+            team2Card.innerHTML = `
+                <h4>${match.team2}</h4>
+                <div class="scorecard-details-grid">
+                    <div class="scorecard-detail-item"><span>${match.scorecard2.runs}/${match.scorecard2.wickets}</span>Runs/Wickets</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard2.extras.wides + match.scorecard2.extras.noballs + match.scorecard2.extras.byes + match.scorecard2.extras.legbyes}</span>Extras</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard2.breakdown['4']}</span>Fours</div>
+                    <div class="scorecard-detail-item"><span>${match.scorecard2.breakdown['6']}</span>Sixes</div>
+                </div>
+            `;
+            scorecardDetailsDiv.appendChild(team2Card);
+            
+            lastMatchScorecardDiv.style.display = 'block';
+        }
+
+        async function loadDashboardData() {
+            const [pointsData, resultsData, scheduleData] = await Promise.all([
+                apiCall('/points_table'),
+                apiCall('/results'),
+                apiCall('/schedule')
+            ]);
+
+            document.getElementById('tournament-title').innerText = pointsData.tournament_name;
+
+            const tableBody = document.querySelector('#points-table tbody');
+            tableBody.innerHTML = '';
+            pointsData.table.forEach(([team, stats]) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td>${team}</td><td>${stats.played}</td><td>${stats.won}</td><td>${stats.lost}</td><td>${stats.nrr || '0.000'}</td><td>${stats.points}</td>`;
+            });
+
+            const nextMatchInfo = document.getElementById('next-match-info');
+            if (scheduleData.length > 0) {
+                const [team1, team2] = scheduleData[0];
+                nextMatchInfo.textContent = `${team1} vs ${team2}`;
+                simulateBtn.style.display = 'inline-block';
+            } else {
+                nextMatchInfo.textContent = 'All matches played!';
+                simulateBtn.style.display = 'none';
+            }
+
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
+            if (resultsData.length === 0) {
+                resultsContainer.innerHTML = '<p>No results yet.</p>';
+                lastMatchScorecardDiv.style.display = 'none';
+            } else {
+                resultsData.reverse().forEach(match => {
+                    const p = document.createElement('p');
+                    const winnerText = match.winner ? `Winner: ${match.winner}` : 'Result: TIE';
+                    p.innerHTML = `<b>${match.team1} (${match.scorecard1.runs}/${match.scorecard1.wickets}) vs ${match.team2} (${match.scorecard2.runs}/${match.scorecard2.wickets})</b><br>${winnerText}`;
+                    resultsContainer.appendChild(p);
+                });
+                renderScorecard(resultsData[0]);
+            }
+        }
+
+        setupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoader(true);
+            const teamInputs = teamInputsContainer.querySelectorAll('input');
+            const teams = Array.from(teamInputs).map(input => input.value);
+            const data = {
+                name: document.getElementById('tournament-name').value,
+                overs: document.getElementById('tournament-overs').value,
+                teams: teams
+            };
+            
+            try {
+                await apiCall('/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                showMessage('Tournament created successfully!');
+                showView(dashboardView);
+                await loadDashboardData();
+            } catch (error) {
+            } finally {
+                showLoader(false);
+            }
+        });
+
+        simulateBtn.addEventListener('click', async () => {
+            showLoader(true);
+            try {
+                const result = await apiCall('/simulate_next', { method: 'POST' });
+                showMessage('Match simulated!');
+                renderScorecard(result.result);
+                await loadDashboardData();
+            } catch (error) {
+            } finally {
+                showLoader(false);
+            }
+        });
+
+        resetBtn.addEventListener('click', async () => {
+            const isConfirmed = confirm('Are you sure you want to reset the entire system? This will delete all tournament data and cannot be undone.');
+            
+            if (isConfirmed) {
+                showLoader(true);
+                try {
+                    await apiCall('/reset', { method: 'POST' });
+                    showMessage('System reset successfully! Redirecting to setup...');
+                    setTimeout(() => {
+                        showView(setupView);
+                        setupForm.reset();
+                        teamInputsContainer.innerHTML = '';
+                    }, 2000);
+                } catch (error) {
+                } finally {
+                    showLoader(false);
+                }
+            }
+        });
+
+        (async () => {
+            showLoader(true);
+            try {
+                const status = await apiCall('/status');
+                if (status.is_setup) {
+                    showView(dashboardView);
+                    await loadDashboardData();
+                } else {
+                    showView(setupView);
+                }
+            } catch (error) {
+                showMessage('Could not connect to the backend. Is it running?', 'error');
+            } finally {
+                showLoader(false);
+            }
+        })();
+    });
+    </script>
+</body>
+</html>
